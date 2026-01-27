@@ -12,7 +12,7 @@ This is a backend created for solve an specific project management need. It prov
 ## Installation
 1. Clone the repository:
    ```bash
-   git clone [url]
+   git clone https://github.com/JosephAnderson234/guia-backend
    ```
 2. Navigate to the project directory:
    ```bash
