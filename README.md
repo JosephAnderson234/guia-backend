@@ -45,5 +45,4 @@ This is a backend created for solve an specific project management need. It prov
    ```
 
 
->[!info]
 > For detailed instructions on setting up Google API credentials, refer to the [Google Calendar API documentation](https://developers.google.com/calendar/api/quickstart/python).
