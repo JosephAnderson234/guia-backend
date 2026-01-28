@@ -10,7 +10,7 @@ from app.core.config import CALENDAR_ID
 
 router = APIRouter(prefix="/citas", tags=["Citas"])
 
-@router.post("/")
+@router.post("/agendar")
 def crear_cita(cita: CitaRequest):
     # def crear_cita(cita: CitaRequest, db: Session = Depends(get_db)):
 
