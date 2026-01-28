@@ -1,12 +1,8 @@
-from fastapi import APIRouter, HTTPException
-from datetime import timedelta
-# from fastapi import Depends
-# from sqlalchemy.orm import Session
-from app.schemas.cita import CitaRequest
-# from app.db.session import get_db
-# from app.db.models import Cita
-from app.core.calendar import calendar_service
-from app.core.config import CALENDAR_ID
+"""
+DEPRECATED - Migrado a app/adapters/api/routes/citas.py
+No usar este archivo.
+"""
+
 
 router = APIRouter(prefix="/citas", tags=["Citas"])
 

@@ -187,3 +187,20 @@ class PacienteConHistorial(PacienteResponse):
 
 class FisioterapeutaConAgenda(FisioterapeutaResponse):
     reservas: List[ReservaConDetalles] = []
+
+
+# ==================== CITAS (GOOGLE CALENDAR) ====================
+
+class CitaBase(BaseModel):
+    cliente: str = Field(..., min_length=1, max_length=100)
+    fechas_iniciales: List[datetime]
+
+
+class CitaCreate(CitaBase):
+    pass
+
+
+class CitaResponse(BaseModel):
+    message: str
+    google_event_ids: List[str]
+    total_eventos: int

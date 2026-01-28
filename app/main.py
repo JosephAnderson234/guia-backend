@@ -2,9 +2,9 @@ from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
 import sys
 
-# Rutas (Adaptadores API)
-from app.routes.citas import router as citas_router
+# Rutas (Adaptadores API - Hexagonal)
 from app.adapters.api.routes.pacientes import router as pacientes_router
+from app.adapters.api.routes.citas import router as citas_router
 
 # Base de Datos (Session y Configuración)
 from app.db.base import Base
@@ -61,12 +61,12 @@ app = FastAPI(
 )
 
 
-# ==================== RUTAS (ADAPTADORES) ====================
+# ==================== RUTAS (ADAPTADORES HEXAGONALES) ====================
 
-# Rutas de Pacientes (Hexagonal)
+# Rutas de Pacientes
 app.include_router(pacientes_router)
 
-# Rutas de Citas (Legacy)
+# Rutas de Citas
 app.include_router(citas_router)
 
 

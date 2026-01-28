@@ -1,6 +1,4 @@
-from pydantic import BaseModel
-from datetime import datetime
-
-class CitaRequest(BaseModel):
-    cliente: str
-    fechas_iniciales: list[datetime]
+"""
+DEPRECATED - Migrado a app/shared/schemas/__init__.py
+No usar este archivo.
+"""
