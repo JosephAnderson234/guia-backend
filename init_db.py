@@ -22,6 +22,11 @@ def init_db():
     """Crear todas las tablas en la base de datos"""
     print("🔄 Creando tablas en PostgreSQL...")
     Base.metadata.create_all(bind=engine)
+    """Importar datos de prueba"""
+    #usar datos_prueba_citas.sql para insertar datos de prueba
+    
+    
+    
     print("✅ Base de datos inicializada exitosamente")
 
 

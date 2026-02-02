@@ -224,3 +224,241 @@ class PacienteRepositoryImpl(PacienteRepository):
             aseguradora=orm.aseguradora,
             created_at=orm.created_at
         )
+
+
+class FisioterapeutaRepositoryImpl(FisioterapeutaRepository):
+    """Implementación de FisioterapeutaRepository con PostgreSQL"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+    
+    async def crear(self, fisioterapeuta: FisioterapeutaEntity) -> FisioterapeutaEntity:
+        db_fisio = FisioterapeutaORM(nombre=fisioterapeuta.nombre)
+        self.db.add(db_fisio)
+        self.db.commit()
+        self.db.refresh(db_fisio)
+        return self._to_entity(db_fisio)
+    
+    async def obtener_por_id(self, fisioterapeuta_id: int) -> Optional[FisioterapeutaEntity]:
+        db_fisio = self.db.query(FisioterapeutaORM).filter(FisioterapeutaORM.id == fisioterapeuta_id).first()
+        return self._to_entity(db_fisio) if db_fisio else None
+    
+    async def listar(self, skip: int = 0, limit: int = 100) -> List[FisioterapeutaEntity]:
+        db_fisios = self.db.query(FisioterapeutaORM).offset(skip).limit(limit).all()
+        return [self._to_entity(f) for f in db_fisios]
+    
+    async def contar_pacientes_en_bloque(self, fisioterapeuta_id: int, fecha: Date, bloque_id: int) -> int:
+        """Cuenta cuántos pacientes tiene el fisio en un bloque específico"""
+        count = self.db.query(ReservaORM).filter(
+            ReservaORM.fisioterapeuta_id == fisioterapeuta_id,
+            ReservaORM.fecha == fecha,
+            ReservaORM.bloque_id == bloque_id
+        ).count()
+        return count
+    
+    async def tiene_paciente_con_trato_especial(self, fisioterapeuta_id: int, fecha: Date, bloque_id: int) -> bool:
+        """Verifica si el fisio tiene un paciente con trato especial en ese bloque"""
+        reserva = self.db.query(ReservaORM).join(
+            PacienteORM, ReservaORM.paciente_id == PacienteORM.id
+        ).filter(
+            ReservaORM.fisioterapeuta_id == fisioterapeuta_id,
+            ReservaORM.fecha == fecha,
+            ReservaORM.bloque_id == bloque_id,
+            PacienteORM.requiere_tratamiento_especial == True
+        ).first()
+        return reserva is not None
+    
+    @staticmethod
+    def _to_entity(orm: FisioterapeutaORM) -> Optional[FisioterapeutaEntity]:
+        if not orm:
+            return None
+        return FisioterapeutaEntity(id=orm.id, nombre=orm.nombre)
+
+
+class EspacioRepositoryImpl(EspacioRepository):
+    """Implementación de EspacioRepository con PostgreSQL"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+    
+    async def crear(self, espacio: EspacioEntity) -> EspacioEntity:
+        db_espacio = EspacioORM(nombre=espacio.nombre)
+        self.db.add(db_espacio)
+        self.db.commit()
+        self.db.refresh(db_espacio)
+        return self._to_entity(db_espacio)
+    
+    async def obtener_por_id(self, espacio_id: int) -> Optional[EspacioEntity]:
+        db_espacio = self.db.query(EspacioORM).filter(EspacioORM.id == espacio_id).first()
+        return self._to_entity(db_espacio) if db_espacio else None
+    
+    async def listar(self, skip: int = 0, limit: int = 100) -> List[EspacioEntity]:
+        db_espacios = self.db.query(EspacioORM).offset(skip).limit(limit).all()
+        return [self._to_entity(e) for e in db_espacios]
+    
+    async def obtener_espacios_ocupados(self, fecha: Date, bloque_id: int) -> List[int]:
+        """Obtiene IDs de espacios ocupados en una fecha y bloque específicos"""
+        reservas = self.db.query(ReservaORM.espacio_id).filter(
+            ReservaORM.fecha == fecha,
+            ReservaORM.bloque_id == bloque_id
+        ).all()
+        return [r.espacio_id for r in reservas]
+    
+    async def esta_disponible(self, espacio_id: int, fecha: Date, bloque_id: int) -> bool:
+        """Verifica si un espacio está disponible"""
+        reserva = self.db.query(ReservaORM).filter(
+            ReservaORM.espacio_id == espacio_id,
+            ReservaORM.fecha == fecha,
+            ReservaORM.bloque_id == bloque_id
+        ).first()
+        return reserva is None
+    
+    @staticmethod
+    def _to_entity(orm: EspacioORM) -> Optional[EspacioEntity]:
+        if not orm:
+            return None
+        return EspacioEntity(id=orm.id, nombre=orm.nombre)
+
+
+class BloqueHorarioRepositoryImpl(BloqueHorarioRepository):
+    """Implementación de BloqueHorarioRepository con PostgreSQL"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+    
+    async def crear(self, bloque: BloqueHorarioEntity) -> BloqueHorarioEntity:
+        db_bloque = BloqueHorarioORM(hora_inicio=bloque.hora_inicio, hora_fin=bloque.hora_fin)
+        self.db.add(db_bloque)
+        self.db.commit()
+        self.db.refresh(db_bloque)
+        return self._to_entity(db_bloque)
+    
+    async def obtener_por_id(self, bloque_id: int) -> Optional[BloqueHorarioEntity]:
+        db_bloque = self.db.query(BloqueHorarioORM).filter(BloqueHorarioORM.id == bloque_id).first()
+        return self._to_entity(db_bloque) if db_bloque else None
+    
+    async def listar(self, skip: int = 0, limit: int = 100) -> List[BloqueHorarioEntity]:
+        db_bloques = self.db.query(BloqueHorarioORM).order_by(BloqueHorarioORM.hora_inicio).offset(skip).limit(limit).all()
+        return [self._to_entity(b) for b in db_bloques]
+    
+    @staticmethod
+    def _to_entity(orm: BloqueHorarioORM) -> Optional[BloqueHorarioEntity]:
+        if not orm:
+            return None
+        return BloqueHorarioEntity(
+            id=orm.id,
+            hora_inicio=orm.hora_inicio,
+            hora_fin=orm.hora_fin
+        )
+
+
+class MaquinaRepositoryImpl(MaquinaRepository):
+    """Implementación de MaquinaRepository con PostgreSQL"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+    
+    async def crear(self, maquina: MaquinaEntity) -> MaquinaEntity:
+        db_maquina = MaquinaORM(codigo=maquina.codigo)
+        self.db.add(db_maquina)
+        self.db.commit()
+        self.db.refresh(db_maquina)
+        return self._to_entity(db_maquina)
+    
+    async def obtener_por_id(self, maquina_id: int) -> Optional[MaquinaEntity]:
+        db_maquina = self.db.query(MaquinaORM).filter(MaquinaORM.id == maquina_id).first()
+        return self._to_entity(db_maquina) if db_maquina else None
+    
+    async def listar(self, skip: int = 0, limit: int = 100) -> List[MaquinaEntity]:
+        db_maquinas = self.db.query(MaquinaORM).offset(skip).limit(limit).all()
+        return [self._to_entity(m) for m in db_maquinas]
+    
+    async def contar_maquinas_en_uso(self, fecha: Date, bloque_id: int) -> int:
+        """Cuenta cuántas máquinas están en uso en un bloque específico"""
+        count = self.db.query(ReservaORM).filter(
+            ReservaORM.fecha == fecha,
+            ReservaORM.bloque_id == bloque_id,
+            ReservaORM.maquina_id.isnot(None)
+        ).count()
+        return count
+    
+    async def obtener_maquina_disponible(self, fecha: Date, bloque_id: int) -> Optional[int]:
+        """Obtiene el ID de una máquina disponible, si existe"""
+        maquinas_en_uso = self.db.query(ReservaORM.maquina_id).filter(
+            ReservaORM.fecha == fecha,
+            ReservaORM.bloque_id == bloque_id,
+            ReservaORM.maquina_id.isnot(None)
+        ).all()
+        
+        ids_en_uso = {m.maquina_id for m in maquinas_en_uso}
+        
+        maquina_libre = self.db.query(MaquinaORM).filter(
+            ~MaquinaORM.id.in_(ids_en_uso)
+        ).first()
+        
+        return maquina_libre.id if maquina_libre else None
+    
+    @staticmethod
+    def _to_entity(orm: MaquinaORM) -> Optional[MaquinaEntity]:
+        if not orm:
+            return None
+        return MaquinaEntity(id=orm.id, codigo=orm.codigo)
+
+
+class ReservaRepositoryImpl(ReservaRepository):
+    """Implementación de ReservaRepository con PostgreSQL"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+    
+    async def crear(self, reserva: ReservaEntity) -> ReservaEntity:
+        db_reserva = ReservaORM(
+            paciente_id=reserva.paciente_id,
+            fisioterapeuta_id=reserva.fisioterapeuta_id,
+            espacio_id=reserva.espacio_id,
+            bloque_id=reserva.bloque_id,
+            maquina_id=reserva.maquina_id,
+            fecha=reserva.fecha
+        )
+        self.db.add(db_reserva)
+        self.db.commit()
+        self.db.refresh(db_reserva)
+        return self._to_entity(db_reserva)
+    
+    async def obtener_por_id(self, reserva_id: int) -> Optional[ReservaEntity]:
+        db_reserva = self.db.query(ReservaORM).filter(ReservaORM.id == reserva_id).first()
+        return self._to_entity(db_reserva) if db_reserva else None
+    
+    async def listar(self, skip: int = 0, limit: int = 100) -> List[ReservaEntity]:
+        db_reservas = self.db.query(ReservaORM).offset(skip).limit(limit).all()
+        return [self._to_entity(r) for r in db_reservas]
+    
+    async def listar_por_paciente(self, paciente_id: int) -> List[ReservaEntity]:
+        """Lista todas las reservas de un paciente"""
+        db_reservas = self.db.query(ReservaORM).filter(
+            ReservaORM.paciente_id == paciente_id
+        ).order_by(ReservaORM.fecha).all()
+        return [self._to_entity(r) for r in db_reservas]
+    
+    async def listar_por_fecha_bloque(self, fecha: Date, bloque_id: int) -> List[ReservaEntity]:
+        """Lista reservas de una fecha y bloque específicos"""
+        db_reservas = self.db.query(ReservaORM).filter(
+            ReservaORM.fecha == fecha,
+            ReservaORM.bloque_id == bloque_id
+        ).all()
+        return [self._to_entity(r) for r in db_reservas]
+    
+    @staticmethod
+    def _to_entity(orm: ReservaORM) -> Optional[ReservaEntity]:
+        if not orm:
+            return None
+        return ReservaEntity(
+            id=orm.id,
+            paciente_id=orm.paciente_id,
+            fisioterapeuta_id=orm.fisioterapeuta_id,
+            espacio_id=orm.espacio_id,
+            bloque_id=orm.bloque_id,
+            maquina_id=orm.maquina_id,
+            fecha=orm.fecha
+        )
+      

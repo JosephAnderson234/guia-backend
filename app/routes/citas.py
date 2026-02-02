@@ -85,3 +85,9 @@ def crear_eventos_google(cita: CitaRequest) -> list[str]:
         event_ids.append(evento_creado["id"])
     
     return event_ids
+
+
+
+@router.get("/")
+def listar_citas_disponibles():
+    return {"message": "Listado de citas disponibles - Endpoint en construcción"}

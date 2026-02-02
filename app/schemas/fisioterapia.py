@@ -187,3 +187,104 @@ class PacienteConHistorial(PacienteResponse):
 
 class FisioterapeutaConAgenda(FisioterapeutaResponse):
     reservas: List[ReservaConDetalles] = []
+
+
+# ==================== DISPONIBILIDAD ====================
+
+class DisponibilidadQuery(BaseModel):
+    """Query params para consultar disponibilidad"""
+    fecha_inicio: date
+    fecha_fin: date
+    paciente_id: Optional[int] = None
+    fisioterapeuta_id: Optional[int] = None
+
+
+class BloqueDisponible(BaseModel):
+    """Información de un bloque horario disponible"""
+    fecha: date
+    bloque_id: int
+    hora_inicio: time
+    hora_fin: time
+    espacios_disponibles: int = Field(..., ge=0, le=9, description="Espacios libres (máximo 9)")
+    maquinas_disponibles: Optional[int] = Field(None, ge=0, le=3, description="Máquinas libres (máximo 3)")
+
+    class Config:
+        from_attributes = True
+
+
+class DisponibilidadResponse(BaseModel):
+    """Respuesta con bloques disponibles"""
+    bloques_disponibles: List[BloqueDisponible]
+    total_bloques: int
+    fecha_inicio: date
+    fecha_fin: date
+
+
+# ==================== TRATAMIENTO RECURRENTE ====================
+
+class TratamientoCreate(BaseModel):
+    """Request body para agendar tratamiento recurrente"""
+    paciente_id: int = Field(..., gt=0, description="ID del paciente")
+    fisioterapeuta_id: int = Field(..., gt=0, description="ID del fisioterapeuta")
+    bloque_id: int = Field(..., gt=0, description="ID del bloque horario")
+    fecha_inicio: date = Field(..., description="Fecha de inicio del tratamiento")
+    total_sesiones: int = Field(..., gt=0, le=50, description="Total de sesiones a agendar (máx. 50)")
+    requiere_maquina: bool = Field(default=False, description="Si el paciente requiere máquina")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "paciente_id": 1,
+                "fisioterapeuta_id": 2,
+                "bloque_id": 3,
+                "fecha_inicio": "2026-02-10",
+                "total_sesiones": 12,
+                "requiere_maquina": True
+            }
+        }
+
+
+class SesionAgendada(BaseModel):
+    """Información de una sesión agendada"""
+    id: int
+    fecha: date
+    bloque_id: int
+    espacio_id: int
+    maquina_id: Optional[int] = None
+    hora_inicio: time
+    hora_fin: time
+
+    class Config:
+        from_attributes = True
+
+
+class TratamientoResponse(BaseModel):
+    """Respuesta después de agendar un tratamiento"""
+    paciente_id: int
+    fisioterapeuta_id: int
+    total_sesiones_agendadas: int
+    sesiones: List[SesionAgendada]
+    requiere_maquina: bool
+    mensaje: str = Field(default="Tratamiento agendado exitosamente")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "paciente_id": 1,
+                "fisioterapeuta_id": 2,
+                "total_sesiones_agendadas": 12,
+                "sesiones": [
+                    {
+                        "id": 101,
+                        "fecha": "2026-02-10",
+                        "bloque_id": 3,
+                        "espacio_id": 5,
+                        "maquina_id": 2,
+                        "hora_inicio": "09:00:00",
+                        "hora_fin": "09:40:00"
+                    }
+                ],
+                "requiere_maquina": True,
+                "mensaje": "Tratamiento agendado exitosamente"
+            }
+        }
